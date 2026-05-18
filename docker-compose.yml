@@ -1,36 +1,60 @@
-version: '3.8'
+version: '3.9'
 
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: ayapay-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: paychain
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ayapay
+      POSTGRES_PASSWORD: ayapay_secret
+      POSTGRES_DB: ayapay
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ayapay_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ayapay']
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
+    container_name: ayapay-redis
+    restart: unless-stopped
     ports:
-      - '6379:6379'
+      - '6380:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   backend:
     build:
-      context: .
-      dockerfile: apps/backend/Dockerfile
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: ayapay-backend
+    restart: unless-stopped
     ports:
       - '4000:4000'
     environment:
-      DATABASE_URL: postgresql://postgres:password@postgres:5432/paychain
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: postgresql://ayapay:ayapay_secret@postgres:5432/ayapay
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: change-me-in-production
-      STELLAR_NETWORK: testnet
+      FRONTEND_URL: http://localhost:3001
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: 7d
+      CELO_NETWORK: ${CELO_NETWORK:-alfajores}
+      CELO_RPC_URL: ${CELO_RPC_URL:-https://alfajores-forno.celo-testnet.org}
+      CELO_ADMIN_PRIVATE_KEY: ${CELO_ADMIN_PRIVATE_KEY:-}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
 volumes:
-  postgres_data:
+  ayapay_postgres_data:
