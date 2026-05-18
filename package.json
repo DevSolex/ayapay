@@ -1,0 +1,17 @@
+{
+  "name": "paychain",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace=apps/frontend\" \"npm run dev --workspace=apps/backend\"",
+    "build": "npm run build --workspace=apps/frontend && npm run build --workspace=apps/backend",
+    "lint": "npm run lint --workspace=apps/frontend && npm run lint --workspace=apps/backend"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
