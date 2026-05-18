@@ -20,13 +20,25 @@ dotenv.config()
 const app = express()
 const PORT = process.env.PORT || 4000
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:3000',
+  'https://ayapay.vercel.app',
+  'http://localhost:3001',
+]
+
 app.use(helmet())
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }))
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
+    cb(null, true) // permissive for now — tighten in production
+  },
+  credentials: true,
+}))
 app.use(compression() as express.RequestHandler)
 app.use(morgan('dev'))
 app.use(express.json({ limit: '10kb' }))
 
-app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: 'Too many requests' }))
+app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 200, message: 'Too many requests' }))
 
 app.get('/health', async (_req, res) => {
   const health = await checkHealth()
@@ -43,9 +55,12 @@ app.use('/api/wallets', walletRoutes)
 app.use(notFound)
 app.use(errorHandler)
 
-app.listen(PORT, () => {
-  console.log(`AyaPay API running on port ${PORT}`)
-  startPayrollScheduler()
-})
+// Only start the HTTP server when running directly (not in serverless)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`AyaPay API running on port ${PORT}`)
+    startPayrollScheduler()
+  })
+}
 
 export default app
