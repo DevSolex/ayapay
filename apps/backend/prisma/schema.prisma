@@ -1,0 +1,132 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  HR_MANAGER
+  EMPLOYEE
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  SUSPENDED
+  TERMINATED
+}
+
+enum PaymentToken {
+  USDC
+  USDT
+  CELO
+  cUSD
+}
+
+enum PaymentFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum PayrollStatus {
+  PENDING
+  APPROVED
+  EXECUTED
+  FAILED
+  CANCELLED
+}
+
+enum SupportedChain {
+  CELO
+  BASE
+  ETHEREUM
+  STELLAR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole @default(EMPLOYEE)
+  companyId String?
+  company   Company? @relation(fields: [companyId], references: [id])
+  wallet    Wallet?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([companyId])
+}
+
+model Company {
+  id            String         @id @default(cuid())
+  name          String
+  walletAddress String?
+  chain         SupportedChain @default(CELO)
+  logoUrl       String?
+  website       String?
+  users         User[]
+  employees     Employee[]
+  payrolls      Payroll[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Employee {
+  id               String           @id @default(cuid())
+  companyId        String
+  company          Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  name             String
+  email            String
+  walletAddress    String
+  title            String?
+  salary           Decimal          @db.Decimal(18, 6)
+  token            PaymentToken     @default(USDC)
+  paymentFrequency PaymentFrequency @default(MONTHLY)
+  status           EmployeeStatus   @default(ACTIVE)
+  payrolls         Payroll[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([status])
+}
+
+model Payroll {
+  id          String         @id @default(cuid())
+  companyId   String
+  company     Company        @relation(fields: [companyId], references: [id])
+  employeeId  String
+  employee    Employee       @relation(fields: [employeeId], references: [id])
+  amount      Decimal        @db.Decimal(18, 6)
+  token       PaymentToken
+  txHash      String?        @unique
+  status      PayrollStatus  @default(PENDING)
+  chain       SupportedChain @default(CELO)
+  paymentDate DateTime
+  executedAt  DateTime?
+  retryCount  Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+  @@index([paymentDate])
+}
+
+model Wallet {
+  id        String         @id @default(cuid())
+  userId    String         @unique
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  address   String
+  network   SupportedChain @default(CELO)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
