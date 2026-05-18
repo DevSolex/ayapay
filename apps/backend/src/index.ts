@@ -13,6 +13,7 @@ import analyticsRoutes from './routes/analytics'
 import walletRoutes from './routes/wallets'
 import { startPayrollScheduler } from './jobs/payroll-scheduler'
 import { errorHandler, notFound } from './middleware/error'
+import { checkHealth } from './services/health'
 
 dotenv.config()
 
@@ -27,8 +28,10 @@ app.use(express.json({ limit: '10kb' }))
 
 app.use('/api', rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: 'Too many requests' }))
 
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() })
+app.get('/health', async (_req, res) => {
+  const health = await checkHealth()
+  const statusCode = health.status === 'down' ? 503 : 200
+  res.status(statusCode).json(health)
 })
 
 app.use('/api/auth', authRoutes)
