@@ -4,6 +4,7 @@ import { authenticate, authorize, requireCompany } from '../middleware/auth'
 import { validate, payrollSchema } from '../utils/validators'
 import { executePayroll, executeBulkPayroll } from '../services/payment'
 import type { AuthRequest } from '../middleware/auth'
+import type { PayrollStatus, PaymentToken } from '@prisma/client'
 
 const router = Router()
 
@@ -17,9 +18,9 @@ router.get('/', async (req: AuthRequest, res) => {
   const payrolls = await prisma.payroll.findMany({
     where: {
       companyId,
-      ...(status ? { status: status as string } : {}),
+      ...(status ? { status: status as PayrollStatus } : {}),
       ...(employeeId ? { employeeId: employeeId as string } : {}),
-      ...(token ? { token: token as string } : {}),
+      ...(token ? { token: token as PaymentToken } : {}),
     },
     include: { employee: { select: { name: true, email: true, walletAddress: true } } },
     orderBy: { createdAt: 'desc' },
@@ -50,21 +51,23 @@ router.post('/', authorize('ADMIN', 'HR_MANAGER'), async (req: AuthRequest, res)
 
 // POST /api/payroll/:id/approve
 router.post('/:id/approve', authorize('ADMIN'), async (req: AuthRequest, res) => {
-  const payroll = await prisma.payroll.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId! } })
+  const id = req.params.id as string
+  const payroll = await prisma.payroll.findFirst({ where: { id, companyId: req.user!.companyId! } })
   if (!payroll) return res.status(404).json({ success: false, error: 'Payroll not found' })
   if (payroll.status !== 'PENDING') return res.status(400).json({ success: false, error: 'Only pending payrolls can be approved' })
 
-  const updated = await prisma.payroll.update({ where: { id: req.params.id }, data: { status: 'APPROVED' } })
+  const updated = await prisma.payroll.update({ where: { id }, data: { status: 'APPROVED' } })
   res.json({ success: true, data: updated })
 })
 
 // POST /api/payroll/:id/execute
 router.post('/:id/execute', authorize('ADMIN'), async (req: AuthRequest, res) => {
-  const payroll = await prisma.payroll.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId! } })
+  const id = req.params.id as string
+  const payroll = await prisma.payroll.findFirst({ where: { id, companyId: req.user!.companyId! } })
   if (!payroll) return res.status(404).json({ success: false, error: 'Payroll not found' })
 
   try {
-    const result = await executePayroll(req.params.id as string)
+    const result = await executePayroll(id)
     res.json({ success: result.success, data: result, error: result.error })
   } catch (err: unknown) {
     res.status(500).json({ success: false, error: err instanceof Error ? err.message : 'Execution failed' })
@@ -80,11 +83,12 @@ router.post('/bulk-execute', authorize('ADMIN'), async (req: AuthRequest, res) =
 
 // POST /api/payroll/:id/cancel
 router.post('/:id/cancel', authorize('ADMIN', 'HR_MANAGER'), async (req: AuthRequest, res) => {
-  const payroll = await prisma.payroll.findFirst({ where: { id: req.params.id, companyId: req.user!.companyId! } })
+  const id = req.params.id as string
+  const payroll = await prisma.payroll.findFirst({ where: { id, companyId: req.user!.companyId! } })
   if (!payroll) return res.status(404).json({ success: false, error: 'Payroll not found' })
   if (payroll.status === 'EXECUTED') return res.status(400).json({ success: false, error: 'Cannot cancel executed payroll' })
 
-  const updated = await prisma.payroll.update({ where: { id: req.params.id }, data: { status: 'CANCELLED' } })
+  const updated = await prisma.payroll.update({ where: { id }, data: { status: 'CANCELLED' } })
   res.json({ success: true, data: updated })
 })
 
