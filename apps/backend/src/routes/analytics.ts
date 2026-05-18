@@ -1,0 +1,61 @@
+import { Router } from 'express'
+import { prisma } from '../utils/prisma'
+import { authenticate, requireCompany } from '../middleware/auth'
+import type { AuthRequest } from '../middleware/auth'
+
+type PayrollRecord = {
+  paymentDate: Date
+  executedAt: Date | null
+  status: string
+  amount: { toString(): string }
+}
+
+const router = Router()
+
+// GET /api/analytics/overview
+router.get('/overview', authenticate, requireCompany, async (req: AuthRequest, res) => {
+  const companyId = req.user!.companyId!
+
+  const [totalEmployees, activeEmployees, payrolls] = await Promise.all([
+    prisma.employee.count({ where: { companyId } }),
+    prisma.employee.count({ where: { companyId, status: 'ACTIVE' } }),
+    prisma.payroll.findMany({ where: { companyId } }),
+  ])
+
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const monthlyPayrolls = (payrolls as PayrollRecord[]).filter(p => new Date(p.paymentDate) >= startOfMonth)
+  const executedPayrolls = (payrolls as PayrollRecord[]).filter(p => p.status === 'EXECUTED')
+  const pendingPayrolls = (payrolls as PayrollRecord[]).filter(p => p.status === 'PENDING' || p.status === 'APPROVED')
+
+  const monthlyTotal = monthlyPayrolls.reduce((sum: number, p: PayrollRecord) => sum + Number(p.amount), 0)
+  const totalSent = executedPayrolls.reduce((sum: number, p: PayrollRecord) => sum + Number(p.amount), 0)
+
+  // Monthly trend (last 6 months)
+  const trend = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 1)
+    const total = executedPayrolls
+      .filter((p: PayrollRecord) => {
+        const date = new Date(p.executedAt ?? p.paymentDate)
+        return date >= d && date < end
+      })
+      .reduce((sum: number, p: PayrollRecord) => sum + Number(p.amount), 0)
+    return { month: d.toLocaleString('default', { month: 'short' }), total }
+  })
+
+  res.json({
+    success: true,
+    data: {
+      totalEmployees,
+      activeEmployees,
+      monthlyPayrollTotal: monthlyTotal,
+      totalPayrollSent: totalSent,
+      pendingPayrolls: pendingPayrolls.length,
+      trend,
+    },
+  })
+})
+
+export default router
