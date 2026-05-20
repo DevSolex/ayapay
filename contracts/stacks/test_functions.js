@@ -1,0 +1,81 @@
+const { makeContractCall, AnchorMode, principalCV, uintCV, serializeTransaction, getAddressFromPrivateKey } = require('@stacks/transactions');
+const { generateWallet } = require('@stacks/wallet-sdk');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.join(__dirname, '../celo/.env') });
+
+const CONTRACT_ADDRESS = 'SP1BMN4D2VW70HZK8CBX08PCNA7MJRA703XDZGNZJ';
+const CONTRACT_NAME = 'ayapay';
+const FEE_MICRO_STX = 25000n;
+
+async function testAddEmployee() {
+  const mnemonic = process.env.MNEMONIC;
+  if (!mnemonic) throw new Error("MNEMONIC is not set in environment.");
+
+  const wallet = await generateWallet({ secretKey: mnemonic, password: 'password' });
+  const privateKey = wallet.accounts[0].stxPrivateKey;
+
+  const employeeAddress = getAddressFromPrivateKey(crypto.randomBytes(32));
+  const walletAddress = getAddressFromPrivateKey(crypto.randomBytes(32));
+  const salary = 1000;
+
+  console.log(`Testing add-employee with employee ${employeeAddress}`);
+
+  const transaction = await makeContractCall({
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: 'add-employee',
+    functionArgs: [
+      principalCV(employeeAddress),
+      principalCV(walletAddress),
+      uintCV(salary),
+      principalCV(CONTRACT_ADDRESS)
+    ],
+    senderKey: privateKey,
+    fee: FEE_MICRO_STX,
+    anchorMode: AnchorMode.Any,
+  });
+
+  return transaction;
+}
+
+async function testRemoveEmployee() {
+  const mnemonic = process.env.MNEMONIC;
+  if (!mnemonic) throw new Error("MNEMONIC is not set in environment.");
+
+  const wallet = await generateWallet({ secretKey: mnemonic, password: 'password' });
+  const privateKey = wallet.accounts[0].stxPrivateKey;
+
+  const employeeAddress = getAddressFromPrivateKey(crypto.randomBytes(32));
+
+  console.log(`Testing remove-employee with employee ${employeeAddress}`);
+
+  const transaction = await makeContractCall({
+    contractAddress: CONTRACT_ADDRESS,
+    contractName: CONTRACT_NAME,
+    functionName: 'remove-employee',
+    functionArgs: [
+      principalCV(employeeAddress)
+    ],
+    senderKey: privateKey,
+    fee: FEE_MICRO_STX,
+    anchorMode: AnchorMode.Any,
+  });
+
+  return transaction;
+}
+
+async function runTests() {
+  await testAddEmployee();
+  await testRemoveEmployee();
+  console.log("Tests built successfully.");
+}
+
+if (require.main === module) {
+  runTests().catch(console.error);
+}
+
+module.exports = { testAddEmployee, testRemoveEmployee };
