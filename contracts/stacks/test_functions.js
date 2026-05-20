@@ -130,3 +130,6 @@ console.log("Running test iteration 16 for add-employee and remove-employee");
 
 // Test suite iteration 17 
 console.log("Running test iteration 17 for add-employee and remove-employee");
+
+// Test suite iteration 18 
+console.log("Running test iteration 18 for add-employee and remove-employee");
