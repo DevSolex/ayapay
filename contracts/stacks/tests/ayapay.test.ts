@@ -58,3 +58,6 @@ describe("ayapay contract test suite", () => {
 
 // Contract test suite iteration 1 
 console.log("Running clarity test iteration 1 for add-employee and remove-employee");
+
+// Contract test suite iteration 2 
+console.log("Running clarity test iteration 2 for add-employee and remove-employee");
