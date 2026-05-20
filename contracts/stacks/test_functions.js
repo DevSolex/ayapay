@@ -211,3 +211,6 @@ console.log("Running test iteration 43 for add-employee and remove-employee");
 
 // Test suite iteration 44 
 console.log("Running test iteration 44 for add-employee and remove-employee");
+
+// Test suite iteration 45 
+console.log("Running test iteration 45 for add-employee and remove-employee");
