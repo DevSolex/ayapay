@@ -82,3 +82,6 @@ module.exports = { testAddEmployee, testRemoveEmployee };
 
 // Test suite iteration 1 
 console.log("Running test iteration 1 for add-employee and remove-employee");
+
+// Test suite iteration 2 
+console.log("Running test iteration 2 for add-employee and remove-employee");
