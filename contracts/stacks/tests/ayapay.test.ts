@@ -130,3 +130,6 @@ console.log("Running clarity test iteration 24 for add-employee and remove-emplo
 
 // Contract test suite iteration 25 
 console.log("Running clarity test iteration 25 for add-employee and remove-employee");
+
+// Contract test suite iteration 26 
+console.log("Running clarity test iteration 26 for add-employee and remove-employee");
