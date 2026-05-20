@@ -85,3 +85,6 @@ console.log("Running test iteration 1 for add-employee and remove-employee");
 
 // Test suite iteration 2 
 console.log("Running test iteration 2 for add-employee and remove-employee");
+
+// Test suite iteration 3 
+console.log("Running test iteration 3 for add-employee and remove-employee");
