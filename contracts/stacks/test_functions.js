@@ -112,3 +112,6 @@ console.log("Running test iteration 10 for add-employee and remove-employee");
 
 // Test suite iteration 11 
 console.log("Running test iteration 11 for add-employee and remove-employee");
+
+// Test suite iteration 12 
+console.log("Running test iteration 12 for add-employee and remove-employee");
