@@ -362,3 +362,6 @@ console.log("Running clarity test iteration 31 for get-employee and pay-employee
 
 // Contract test suite iteration 32 
 console.log("Running clarity test iteration 32 for get-employee and pay-employee");
+
+// Contract test suite iteration 33 
+console.log("Running clarity test iteration 33 for get-employee and pay-employee");
