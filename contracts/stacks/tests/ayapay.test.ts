@@ -310,3 +310,6 @@ console.log("Running clarity test iteration 54 for add-employee and remove-emplo
 
 // Contract test suite iteration 55 
 console.log("Running clarity test iteration 55 for add-employee and remove-employee");
+
+// Contract test suite iteration 56
+console.log("Running clarity test iteration 56 for get-employee and pay-employee");
