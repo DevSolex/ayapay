@@ -1,0 +1,18 @@
+[network]
+name = "simnet"
+
+[accounts.deployer]
+mnemonic = "caution quantum vehicle solar wedding math pretty infant home cousin issue small goat night network grow remove bone increase drive cousin obey about victory"
+balance = 100000000000000
+
+[accounts.wallet_1]
+mnemonic = "bundle era brain similar mixed leisure project shuffle snap ritual salon arctic exchange sing garlic flower vacant embark main flower practice produce metal civil"
+balance = 100000000000000
+
+[accounts.wallet_2]
+mnemonic = "core movie fury again clerk witness casino toddler also flash margin million trade square impulse camera emotion biology ring noodle shift school stereo market"
+balance = 100000000000000
+
+[accounts.wallet_3]
+mnemonic = "casino velvet giraffe frost control wood hobby this wool make frost switch track weasel mention improve sting legend gospel spend twice broom pigeon live"
+balance = 100000000000000

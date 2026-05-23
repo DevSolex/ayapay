@@ -5,16 +5,26 @@ import { Cl } from "@stacks/transactions";
 describe("ayapay contract test suite", () => {
   it("should deploy properly", async () => {
     const simnet = await initSimnet();
-    const contract = simnet.getContract("ayapay");
-    expect(contract).toBeDefined();
+    const accounts = simnet.getAccounts();
+    expect(accounts).toBeDefined();
+
+    // Call get-employee for a non-existent employee to verify contract is deployed
+    const result = simnet.callReadOnlyFn(
+      "ayapay",
+      "get-employee",
+      [Cl.principal(accounts.get("wallet_1")!)],
+      accounts.get("deployer")!
+    );
+    expect(result.result).toEqual(Cl.none());
   });
 
   it("should add an employee correctly", async () => {
     const simnet = await initSimnet();
+    const accounts = simnet.getAccounts();
     
-    const admin = simnet.getAccounts().get("wallet_1")!;
-    const employee = simnet.getAccounts().get("wallet_2")!;
-    const token = simnet.getAccounts().get("wallet_3")!;
+    const admin = accounts.get("deployer")!;
+    const employee = accounts.get("wallet_2")!;
+    const token = accounts.get("wallet_3")!;
 
     // Calling add-employee function
     const result = simnet.callPublicFn(
@@ -24,16 +34,16 @@ describe("ayapay contract test suite", () => {
       admin
     );
 
-    expect(result.result).toBeDefined();
-    // expect(result.result).toEqual(Cl.ok(Cl.bool(true)));
+    expect(result.result).toEqual(Cl.ok(Cl.bool(true)));
   });
 
   it("should remove an employee correctly", async () => {
     const simnet = await initSimnet();
+    const accounts = simnet.getAccounts();
     
-    const admin = simnet.getAccounts().get("wallet_1")!;
-    const employee = simnet.getAccounts().get("wallet_2")!;
-    const token = simnet.getAccounts().get("wallet_3")!;
+    const admin = accounts.get("deployer")!;
+    const employee = accounts.get("wallet_2")!;
+    const token = accounts.get("wallet_3")!;
 
     // First add employee
     simnet.callPublicFn(
@@ -51,8 +61,88 @@ describe("ayapay contract test suite", () => {
       admin
     );
 
-    expect(result.result).toBeDefined();
-    // expect(result.result).toEqual(Cl.ok(Cl.bool(true)));
+    expect(result.result).toEqual(Cl.ok(Cl.bool(true)));
+  });
+
+  it("should get employee details correctly", async () => {
+    const simnet = await initSimnet();
+    const accounts = simnet.getAccounts();
+    
+    const admin = accounts.get("deployer")!;
+    const employee = accounts.get("wallet_2")!;
+    const tokenContract = `${admin}.mock-token`;
+
+    // Add employee first
+    simnet.callPublicFn(
+      "ayapay",
+      "add-employee",
+      [Cl.principal(employee), Cl.principal(employee), Cl.uint(1000), Cl.principal(tokenContract)],
+      admin
+    );
+
+    // Call get-employee
+    const result = simnet.callReadOnlyFn(
+      "ayapay",
+      "get-employee",
+      [Cl.principal(employee)],
+      admin
+    );
+
+    expect(result.result).toEqual(
+      Cl.some(
+        Cl.tuple({
+          active: Cl.bool(true),
+          salary: Cl.uint(1000),
+          token: Cl.principal(tokenContract),
+          wallet: Cl.principal(employee)
+        })
+      )
+    );
+  });
+
+  it("should pay employee correctly using standard SIP-010 token", async () => {
+    const simnet = await initSimnet();
+    const accounts = simnet.getAccounts();
+    
+    const admin = accounts.get("deployer")!;
+    const employee = accounts.get("wallet_2")!;
+    const tokenContract = `${admin}.mock-token`;
+
+    // 1. Mint some mock-tokens to the admin so they can pay
+    simnet.callPublicFn(
+      "mock-token",
+      "mint",
+      [Cl.uint(5000), Cl.principal(admin)],
+      admin
+    );
+
+    // 2. Add employee
+    simnet.callPublicFn(
+      "ayapay",
+      "add-employee",
+      [Cl.principal(employee), Cl.principal(employee), Cl.uint(1000), Cl.principal(tokenContract)],
+      admin
+    );
+
+    // 3. Pay employee
+    const payResult = simnet.callPublicFn(
+      "ayapay",
+      "pay-employee",
+      [Cl.principal(employee), Cl.uint(1000), Cl.contractPrincipal(admin, "mock-token")],
+      admin
+    );
+
+    // Expecting ok(true) from the transfer response
+    expect(payResult.result).toEqual(Cl.ok(Cl.bool(true)));
+
+    // 4. Verify employee balance is updated
+    const balanceResult = simnet.callReadOnlyFn(
+      "mock-token",
+      "get-balance",
+      [Cl.principal(employee)],
+      admin
+    );
+    expect(balanceResult.result).toEqual(Cl.ok(Cl.uint(1000)));
   });
 });
 
