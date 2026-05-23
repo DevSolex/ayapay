@@ -144,7 +144,53 @@ describe("ayapay contract test suite", () => {
     );
     expect(balanceResult.result).toEqual(Cl.ok(Cl.uint(1000)));
   });
+  it("should get an employee correctly", async () => {
+    const simnet = await initSimnet();
+    const admin = simnet.getAccounts().get("wallet_1")!;
+    const employee = simnet.getAccounts().get("wallet_2")!;
+    const token = simnet.getAccounts().get("wallet_3")!;
+
+    simnet.callPublicFn(
+      "ayapay",
+      "add-employee",
+      [Cl.principal(employee), Cl.principal(employee), Cl.uint(1000), Cl.principal(token)],
+      admin
+    );
+
+    const result = simnet.callReadOnlyFn(
+      "ayapay",
+      "get-employee",
+      [Cl.principal(employee)],
+      admin
+    );
+
+    expect(result.result).toBeDefined();
+  });
+
+  it("should pay an employee correctly", async () => {
+    const simnet = await initSimnet();
+    const admin = simnet.getAccounts().get("wallet_1")!;
+    const employee = simnet.getAccounts().get("wallet_2")!;
+    const token = simnet.getAccounts().get("wallet_3")!;
+
+    simnet.callPublicFn(
+      "ayapay",
+      "add-employee",
+      [Cl.principal(employee), Cl.principal(employee), Cl.uint(1000), Cl.principal(token)],
+      admin
+    );
+
+    const result = simnet.callPublicFn(
+      "ayapay",
+      "pay-employee",
+      [Cl.principal(employee), Cl.uint(1000), Cl.contractPrincipal(admin, "some-token")],
+      admin
+    );
+    
+    expect(result.result).toBeDefined();
+  });
 });
+
 
 // Contract test suite iteration 1 
 console.log("Running clarity test iteration 1 for add-employee and remove-employee");
