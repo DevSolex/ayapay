@@ -24,6 +24,9 @@ enum PaymentToken {
   USDT
   CELO
   cUSD
+  STX
+  sBTC
+  USDA
 }
 
 enum PaymentFrequency {
@@ -42,9 +45,9 @@ enum PayrollStatus {
 
 enum SupportedChain {
   CELO
+  STACKS
   BASE
   ETHEREUM
-  STELLAR
 }
 
 model User {
