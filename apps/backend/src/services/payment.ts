@@ -1,6 +1,8 @@
 import { isAddress } from 'ethers'
-import { transferToken, isValidCeloAddress } from './celo'
+import { transferToken as transferCeloToken, isValidCeloAddress } from './celo'
+import { transferToken as transferStacksToken, isValidStacksAddress } from './stacks'
 import { prisma } from '../utils/prisma'
+import type { SupportedChain } from '../types'
 
 export interface PaymentResult {
   txHash: string
@@ -8,27 +10,48 @@ export interface PaymentResult {
   error?: string
 }
 
-export async function executeCeloPayment(
+export async function executePayment(
   recipientAddress: string,
   amount: string,
-  token: string
+  token: string,
+  chain: SupportedChain
 ): Promise<PaymentResult> {
-  if (!isValidCeloAddress(recipientAddress)) {
-    throw new Error('Invalid Celo address')
-  }
-
   const amountFloat = parseFloat(amount)
   if (isNaN(amountFloat) || amountFloat <= 0) {
     throw new Error('Invalid payment amount')
   }
 
   try {
-    const txHash = await transferToken(recipientAddress, amount, token)
+    let txHash: string
+
+    if (chain === 'CELO') {
+      if (!isValidCeloAddress(recipientAddress)) {
+        throw new Error('Invalid Celo address')
+      }
+      txHash = await transferCeloToken(recipientAddress, amount, token)
+    } else if (chain === 'STACKS') {
+      if (!isValidStacksAddress(recipientAddress)) {
+        throw new Error('Invalid Stacks address')
+      }
+      txHash = await transferStacksToken(recipientAddress, amount, token)
+    } else {
+      throw new Error(`Unsupported chain: ${chain}`)
+    }
+
     return { txHash, success: true }
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Payment failed'
     return { txHash: '', success: false, error: message }
   }
+}
+
+// Legacy function for backward compatibility
+export async function executeCeloPayment(
+  recipientAddress: string,
+  amount: string,
+  token: string
+): Promise<PaymentResult> {
+  return executePayment(recipientAddress, amount, token, 'CELO')
 }
 
 export async function executePayroll(payrollId: string): Promise<PaymentResult> {
@@ -44,10 +67,11 @@ export async function executePayroll(payrollId: string): Promise<PaymentResult> 
   // Mark as processing
   await prisma.payroll.update({ where: { id: payrollId }, data: { status: 'APPROVED' } })
 
-  const result = await executeCeloPayment(
+  const result = await executePayment(
     payroll.employee.walletAddress,
     payroll.amount.toString(),
-    payroll.token
+    payroll.token,
+    payroll.chain
   )
 
   await prisma.payroll.update({
