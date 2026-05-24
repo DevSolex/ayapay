@@ -1,20 +1,21 @@
-# AyaPay — Decentralized Crypto Payroll on Celo
+# AyaPay — Decentralized Crypto Payroll on Celo & Stacks
 
 > Pay your global team in stablecoins. Fast, transparent, borderless.
 
-AyaPay enables companies to onboard employees, assign salaries, and automate recurring crypto payments using the Celo blockchain.
+AyaPay enables companies to onboard employees, assign salaries, and automate recurring crypto payments using **Celo** (EVM) and **Stacks** (Bitcoin L2) blockchains.
 
 ## Tech Stack
 
-| Layer      | Technology                                    |
-|------------|-----------------------------------------------|
-| Frontend   | Next.js 15, TypeScript, Tailwind CSS, Shadcn  |
-| Backend    | Node.js, Express, Prisma ORM, PostgreSQL      |
-| Blockchain | Celo (EVM), viem, MetaMask / MiniPay wallet   |
-| Auth       | JWT, bcrypt                                   |
-| Scheduling | node-cron                                     |
-| Charts     | Recharts                                      |
-| State      | Zustand, React Query                          |
+| Layer      | Technology                                           |
+|------------|------------------------------------------------------|
+| Frontend   | Next.js 15, TypeScript, Tailwind CSS, Shadcn         |
+| Backend    | Node.js, Express, Prisma ORM, PostgreSQL             |
+| Blockchain | Celo (EVM) + Stacks (Bitcoin L2)                     |
+| Wallets    | MetaMask, MiniPay (Celo) / Hiro, Xverse (Stacks)    |
+| Auth       | JWT, bcrypt                                          |
+| Scheduling | node-cron                                            |
+| Charts     | Recharts                                             |
+| State      | Zustand, React Query                                 |
 
 ## Project Structure
 
@@ -54,8 +55,9 @@ ayapay/
 ### Prerequisites
 - Node.js 20+
 - PostgreSQL 14+
-- MetaMask browser extension (or MiniPay on mobile)
-- A Celo Alfajores testnet wallet with test CELO
+- **Celo**: MetaMask browser extension (or MiniPay on mobile)
+- **Stacks**: Hiro Wallet or Xverse browser extension
+- Test tokens from Celo Alfajores faucet and/or Stacks testnet faucet
 
 ### 1. Clone & Install
 
@@ -70,7 +72,7 @@ npm install
 ```bash
 # Backend
 cp apps/backend/.env.example apps/backend/.env
-# Required: DATABASE_URL, JWT_SECRET, CELO_ADMIN_PRIVATE_KEY
+# Required: DATABASE_URL, JWT_SECRET, CELO_ADMIN_PRIVATE_KEY, STACKS_ADMIN_PRIVATE_KEY
 
 # Frontend
 cp apps/frontend/.env.example apps/frontend/.env.local
@@ -143,32 +145,61 @@ docker-compose up -d   # Starts postgres + redis + backend
 | GET    | /api/wallets/balance/:address | JWT  | Get balances        |
 | GET    | /api/wallets/me               | JWT  | My wallet           |
 
-## Celo Network Details
+## Blockchain Network Details
+
+### Celo
 
 | Network   | Chain ID | RPC URL                                      | Explorer                          |
 |-----------|----------|----------------------------------------------|-----------------------------------|
 | Alfajores | 44787    | https://alfajores-forno.celo-testnet.org     | https://alfajores.celoscan.io     |
 | Mainnet   | 42220    | https://forno.celo.org                       | https://celoscan.io               |
 
-### Getting Test CELO (Alfajores)
-Visit the [Celo Alfajores Faucet](https://faucet.celo.org/alfajores) to get test tokens.
+**Getting Test CELO**: Visit the [Celo Alfajores Faucet](https://faucet.celo.org/alfajores)
+
+### Stacks
+
+| Network   | API URL                              | Explorer                          |
+|-----------|--------------------------------------|-----------------------------------|
+| Testnet   | https://api.testnet.hiro.so          | https://explorer.hiro.so/?chain=testnet |
+| Mainnet   | https://api.hiro.so                  | https://explorer.hiro.so          |
+
+**Getting Test STX**: Visit the [Stacks Testnet Faucet](https://explorer.hiro.so/sandbox/faucet?chain=testnet)
 
 ## Wallet Setup
 
-AyaPay uses standard EVM wallets. Connect with:
+### Celo Wallets
+AyaPay supports standard EVM wallets for Celo:
 - **MetaMask** — install the browser extension, add Celo Alfajores network
 - **MiniPay** — Celo's mobile wallet (Opera Mini integration)
 - Any EIP-1193 compatible wallet
 
 The app will automatically prompt you to add/switch to the Celo Alfajores network on first connect.
 
+### Stacks Wallets
+AyaPay supports Stacks-native wallets:
+- **Hiro Wallet** — browser extension for Stacks (recommended)
+- **Xverse** — mobile and browser wallet for Bitcoin and Stacks
+- **Leather** — formerly Hiro Web Wallet
+
+Click "Connect Wallet" and choose your preferred blockchain and wallet.
+
 ## Supported Tokens
 
-| Token | Network | Contract (Alfajores)                         |
-|-------|---------|----------------------------------------------|
-| USDC  | Celo    | 0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B   |
-| cUSD  | Celo    | 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1   |
-| CELO  | Celo    | Native token                                 |
+### Celo Network
+
+| Token | Type      | Contract (Alfajores)                         |
+|-------|-----------|----------------------------------------------|
+| CELO  | Native    | Native token                                 |
+| cUSD  | Stablecoin| 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1   |
+| USDC  | Stablecoin| 0x2F25deB3848C207fc8E0c34035B3Ba7fC157602B   |
+
+### Stacks Network
+
+| Token | Type      | Contract (Testnet)                           |
+|-------|-----------|----------------------------------------------|
+| STX   | Native    | Native token                                 |
+| USDA  | Stablecoin| SP2C2YFP12AJZB4MABJBAJ55XECVS7E4PMMZ89YZR.usda-token |
+| sBTC  | Wrapped BTC| ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM.sbtc-token |
 
 ## Deployment
 
@@ -191,14 +222,17 @@ vercel deploy
 
 ## Roadmap
 
-- [x] Celo chain support
+- [x] Celo chain support (EVM)
+- [x] Stacks chain support (Bitcoin L2)
+- [x] Multi-chain wallet connection
+- [ ] Deploy Stacks smart contract to testnet
 - [ ] MiniPay deep integration
 - [ ] Fiat-to-crypto onramp (Transak / Kotani Pay)
 - [ ] Tax estimation module
 - [ ] AI payroll insights
 - [ ] Employee NFT identity
 - [ ] DAO treasury integration
-- [ ] Real-time salary streaming
+- [ ] Real-time salary streaming (Superfluid-style)
 
 ## License
 
