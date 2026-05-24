@@ -1,12 +1,16 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+type WalletType = 'celo' | 'stacks'
+
 interface WalletState {
   address: string | null
   network: string | null
   chainId: number | null
+  walletType: WalletType | null
   isConnecting: boolean
-  connectWallet: () => Promise<void>
+  connectCeloWallet: () => Promise<void>
+  connectStacksWallet: () => Promise<void>
   disconnect: () => void
 }
 
@@ -19,6 +23,13 @@ declare global {
       removeListener: (event: string, handler: (...args: unknown[]) => void) => void
       isMetaMask?: boolean
       isMiniPay?: boolean
+    }
+    StacksProvider?: {
+      getAccounts: () => Promise<{ mainnet: string; testnet: string }[]>
+      request: (method: string, params?: unknown) => Promise<unknown>
+    }
+    HiroWalletProvider?: {
+      connect: () => Promise<{ address: string; network: string }>
     }
   }
 }
@@ -60,9 +71,10 @@ export const useWalletStore = create<WalletState>()(
       address: null,
       network: null,
       chainId: null,
+      walletType: null,
       isConnecting: false,
 
-      connectWallet: async () => {
+      connectCeloWallet: async () => {
         if (typeof window === 'undefined' || !window.ethereum) {
           throw new Error(
             'No Web3 wallet detected. Please install MetaMask or use the Celo MiniPay browser.'
@@ -104,20 +116,97 @@ export const useWalletStore = create<WalletState>()(
             // Re-read chainId after switch
             const newChainIdHex = (await window.ethereum.request({ method: 'eth_chainId' })) as string
             const newChainId = parseInt(newChainIdHex, 16)
-            set({ address, chainId: newChainId, network: getNetworkName(newChainId) })
+            set({ address, chainId: newChainId, network: getNetworkName(newChainId), walletType: 'celo' })
           } else {
-            set({ address, chainId, network: getNetworkName(chainId) })
+            set({ address, chainId, network: getNetworkName(chainId), walletType: 'celo' })
           }
         } finally {
           set({ isConnecting: false })
         }
       },
 
-      disconnect: () => set({ address: null, network: null, chainId: null }),
+      connectStacksWallet: async () => {
+        if (typeof window === 'undefined') {
+          throw new Error('Window not available')
+        }
+
+        set({ isConnecting: true })
+        try {
+          // Try Hiro Wallet first
+          if (window.HiroWalletProvider) {
+            const result = await window.HiroWalletProvider.connect()
+            set({
+              address: result.address,
+              network: result.network,
+              chainId: null,
+              walletType: 'stacks',
+            })
+            return
+          }
+
+          // Try Xverse/Leather via StacksProvider
+          if (window.StacksProvider) {
+            const accounts = await window.StacksProvider.getAccounts()
+            if (accounts && accounts.length > 0) {
+              const address = accounts[0].testnet || accounts[0].mainnet
+              set({
+                address,
+                network: 'Stacks Testnet',
+                chainId: null,
+                walletType: 'stacks',
+              })
+              return
+            }
+          }
+
+          // Fallback: try to connect via userSession (for Hiro Wallet)
+          const { AppConfig, UserSession, showConnect } = await import('@stacks/connect')
+          const appConfig = new AppConfig(['store_write', 'publish_data'])
+          const userSession = new UserSession({ appConfig })
+
+          if (userSession.isUserSignedIn()) {
+            const userData = userSession.loadUserData()
+            const address = userData.profile.stxAddress.testnet
+            set({
+              address,
+              network: 'Stacks Testnet',
+              chainId: null,
+              walletType: 'stacks',
+            })
+          } else {
+            showConnect({
+              appDetails: {
+                name: 'AyaPay',
+                icon: window.location.origin + '/logo.png',
+              },
+              onFinish: () => {
+                const userData = userSession.loadUserData()
+                const address = userData.profile.stxAddress.testnet
+                set({
+                  address,
+                  network: 'Stacks Testnet',
+                  chainId: null,
+                  walletType: 'stacks',
+                })
+              },
+              userSession,
+            })
+          }
+        } catch (error) {
+          console.error('Stacks wallet connection error:', error)
+          throw new Error(
+            'No Stacks wallet detected. Please install Hiro Wallet or Xverse.'
+          )
+        } finally {
+          set({ isConnecting: false })
+        }
+      },
+
+      disconnect: () => set({ address: null, network: null, chainId: null, walletType: null }),
     }),
     {
       name: 'ayapay-wallet',
-      partialize: (s) => ({ address: s.address, network: s.network, chainId: s.chainId }),
+      partialize: (s) => ({ address: s.address, network: s.network, chainId: s.chainId, walletType: s.walletType }),
     }
   )
 )
