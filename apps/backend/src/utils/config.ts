@@ -24,4 +24,12 @@ export const config = {
       payment: process.env.PAYMENT_CONTRACT_ID || '',
     },
   },
+  stacks: {
+    network: process.env.STACKS_NETWORK || 'testnet',
+    apiUrl: process.env.STACKS_API_URL || 'https://api.testnet.hiro.so',
+    adminPrivateKey: process.env.STACKS_ADMIN_PRIVATE_KEY || '',
+    adminAddress: process.env.STACKS_ADMIN_ADDRESS || '',
+    contractAddress: process.env.STACKS_CONTRACT_ADDRESS || '',
+    contractName: process.env.STACKS_CONTRACT_NAME || 'ayapay',
+  },
 } as const
