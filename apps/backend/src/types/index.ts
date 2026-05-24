@@ -2,7 +2,7 @@
 
 export type UserRole = 'ADMIN' | 'HR_MANAGER' | 'EMPLOYEE'
 
-export type PaymentToken = 'USDC' | 'USDT' | 'CELO' | 'cUSD'
+export type PaymentToken = 'USDC' | 'USDT' | 'CELO' | 'cUSD' | 'STX' | 'sBTC' | 'USDA'
 
 export type PaymentFrequency = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'
 
@@ -10,7 +10,7 @@ export type PayrollStatus = 'PENDING' | 'APPROVED' | 'EXECUTED' | 'FAILED' | 'CA
 
 export type EmployeeStatus = 'ACTIVE' | 'SUSPENDED' | 'TERMINATED'
 
-export type SupportedChain = 'CELO' | 'BASE' | 'ETHEREUM' | 'STELLAR'
+export type SupportedChain = 'CELO' | 'STACKS' | 'BASE' | 'ETHEREUM'
 
 export interface JwtPayload {
   userId: string
