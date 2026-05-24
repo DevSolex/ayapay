@@ -19,14 +19,14 @@ export const employeeSchema = z.object({
   walletAddress: z.string().min(10),
   title: z.string().optional(),
   salary: z.number().positive(),
-  token: z.enum(['USDC', 'USDT', 'CELO', 'cUSD']).default('USDC'),
+  token: z.enum(['USDC', 'USDT', 'CELO', 'cUSD', 'STX', 'sBTC', 'USDA']).default('USDC'),
   paymentFrequency: z.enum(['WEEKLY', 'BIWEEKLY', 'MONTHLY']).default('MONTHLY'),
 })
 
 export const payrollSchema = z.object({
   employeeId: z.string(),
   amount: z.number().positive(),
-  token: z.enum(['USDC', 'USDT', 'CELO', 'cUSD']),
+  token: z.enum(['USDC', 'USDT', 'CELO', 'cUSD', 'STX', 'sBTC', 'USDA']),
   paymentDate: z.string().datetime(),
 })
 
