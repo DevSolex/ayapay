@@ -1,14 +1,14 @@
 const { makeContractDeploy, broadcastTransaction, AnchorMode } = require('@stacks/transactions');
-const { StacksMainnet } = require('@stacks/network');
+const { STACKS_MAINNET } = require('@stacks/network');
 const { generateWallet } = require('@stacks/wallet-sdk');
 const fs = require('fs');
 const dotenv = require('dotenv');
+const path = require('path');
 
 // Load environment variables
-dotenv.config({ path: '../celo/.env' });
+dotenv.config({ path: path.join(__dirname, '../celo/.env') });
 
 async function deployContract() {
-  // Use the phrase from the environment variable (or fallback to the provided one)
   const mnemonic = process.env.MNEMONIC;
   if (!mnemonic) { console.error('ERROR: MNEMONIC not set in .env'); process.exit(1); }
   
@@ -18,14 +18,14 @@ async function deployContract() {
     password: 'password' // Default password for local wallet generation
   });
   
-  // Extract the private key for the first account
-  const privateKey = wallet.identities[0].privateKey;
+  // Extract the private key for the first account (wallet-sdk v7 API)
+  const privateKey = wallet.accounts[0].stxPrivateKey;
   
-  // Setup Mainnet network configuration
-  const network = new StacksMainnet();
+  // Setup Mainnet network configuration (network v7 uses constants)
+  const network = STACKS_MAINNET;
   
   // Read the Clarity smart contract
-  const codeBody = fs.readFileSync('./contracts/ayapay.clar', 'utf8');
+  const codeBody = fs.readFileSync(path.join(__dirname, './contracts/ayapay.clar'), 'utf8');
 
   // Define transaction options for Mainnet deployment
   const txOptions = {
@@ -41,7 +41,7 @@ async function deployContract() {
   const transaction = await makeContractDeploy(txOptions);
   
   console.log("Broadcasting to Stacks Mainnet...");
-  const broadcastResponse = await broadcastTransaction(transaction, network);
+  const broadcastResponse = await broadcastTransaction({ transaction, network });
   
   console.log("Broadcast Response:", broadcastResponse);
   if (broadcastResponse.txid) {
