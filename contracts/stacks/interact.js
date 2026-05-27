@@ -63,9 +63,15 @@ function curlPostBinary(url, filePath) {
       { encoding: "utf8" }
     );
     try {
-      return JSON.parse(result);
+      const parsed = JSON.parse(result);
+      // API may return a plain quoted txid string e.g. '"abc123..."'
+      // JSON.parse will succeed but return a string, not an object
+      if (typeof parsed === "string") {
+        return { txid: parsed.replace(/[\n\r\s]/g, "") };
+      }
+      return parsed;
     } catch {
-      // The API returns a plain txid string (with quotes)
+      // Non-JSON response — treat as raw txid
       return { txid: result.replace(/["\n\r\s]/g, "") };
     }
   } catch (e) {
@@ -198,7 +204,7 @@ async function main() {
 
   // 5. Print Summary
   const successful = results.filter((r) => r.status === "success").length;
-  const failed = results.filter((r) => r.status !== "success").length;
+  const failed = results.filter((r) => r.status === "failed" || r.status === "error").length;
 
   console.log("\n═══════════════════════════════════════════════════════");
   console.log("  SUMMARY");
