@@ -1,10 +1,28 @@
 // Shared frontend types
 export type UserRole = 'ADMIN' | 'HR_MANAGER' | 'EMPLOYEE'
-export type PaymentToken = 'USDC' | 'USDT' | 'CELO' | 'cUSD'
+export type PaymentToken = 'USDC' | 'USDT' | 'CELO' | 'cUSD' | 'STX'
 export type PaymentFrequency = 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY'
 export type PayrollStatus = 'PENDING' | 'APPROVED' | 'EXECUTED' | 'FAILED' | 'CANCELLED'
 export type EmployeeStatus = 'ACTIVE' | 'SUSPENDED' | 'TERMINATED'
-export type SupportedChain = 'CELO' | 'BASE' | 'ETHEREUM' | 'STELLAR'
+export type SupportedChain = 'CELO' | 'STACKS' | 'BASE' | 'ETHEREUM' | 'STELLAR'
+
+/** Stacks on-chain employee record from ayapay.clar */
+export interface StacksEmployee {
+  wallet: string
+  salary: number
+  token: string
+  active: boolean
+}
+
+/** Chain metadata for display */
+export interface ChainInfo {
+  id: SupportedChain
+  name: string
+  icon: string
+  color: string
+  explorer: string
+  status: 'live' | 'coming-soon'
+}
 
 export interface User {
   id: string
