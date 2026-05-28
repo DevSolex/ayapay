@@ -1,8 +1,8 @@
-# AyaPay — Decentralized Crypto Payroll on Celo
+# AyaPay — Multi-Chain Decentralized Crypto Payroll
 
 > Pay your global team in stablecoins. Fast, transparent, borderless.
 
-AyaPay enables companies to onboard employees, assign salaries, and automate recurring crypto payments using the Celo blockchain.
+AyaPay enables companies to onboard employees, assign salaries, and automate recurring crypto payments across **Celo** and **Stacks** blockchains.
 
 ## Tech Stack
 
@@ -10,7 +10,7 @@ AyaPay enables companies to onboard employees, assign salaries, and automate rec
 |------------|-----------------------------------------------|
 | Frontend   | Next.js 15, TypeScript, Tailwind CSS, Shadcn  |
 | Backend    | Node.js, Express, Prisma ORM, PostgreSQL      |
-| Blockchain | Celo (EVM), viem, MetaMask / MiniPay wallet   |
+| Blockchain | Celo (EVM) + Stacks (Clarity), viem, MetaMask / Leather wallet |
 | Auth       | JWT, bcrypt                                   |
 | Scheduling | node-cron                                     |
 | Charts     | Recharts                                      |
@@ -192,6 +192,8 @@ vercel deploy
 ## Roadmap
 
 - [x] Celo chain support
+- [x] Stacks chain support (ayapay.clar deployed on mainnet)
+- [x] Multi-chain frontend (chain switcher, Stacks wallet, contract admin UI)
 - [ ] MiniPay deep integration
 - [ ] Fiat-to-crypto onramp (Transak / Kotani Pay)
 - [ ] Tax estimation module

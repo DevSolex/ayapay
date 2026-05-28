@@ -22,6 +22,9 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    /* Stacks brand */
+    --stacks: 24.6 95% 53.1%;
+    --stacks-foreground: 0 0% 100%;
   }
 
   .dark {
@@ -42,6 +45,9 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+    /* Stacks brand */
+    --stacks: 24.6 95% 53.1%;
+    --stacks-foreground: 0 0% 100%;
   }
 }
 
@@ -49,3 +55,17 @@
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
 }
+
+/* Chain-specific animations */
+@keyframes stacks-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgb(249 115 22 / 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgb(249 115 22 / 0); }
+}
+
+@keyframes celo-pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgb(34 197 94 / 0.4); }
+  50% { opacity: 0.8; box-shadow: 0 0 0 6px rgb(34 197 94 / 0); }
+}
+
+.stacks-active { animation: stacks-pulse 2s ease-in-out infinite; }
+.celo-active { animation: celo-pulse 2s ease-in-out infinite; }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Play, CheckCircle, XCircle, Zap } from 'lucide-react'
+import { Plus, Play, CheckCircle, XCircle, Zap, ExternalLink, Layers } from 'lucide-react'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { useToast } from '@/hooks/use-toast'
+import { useChainStore } from '@/store/chain'
+import { stacksTxUrl } from '@/lib/stacks'
 import type { Payroll } from '@/types'
 import { CreatePayrollDialog } from '@/components/payroll/create-payroll-dialog'
 
@@ -21,11 +23,28 @@ const statusVariant: Record<string, 'success' | 'warning' | 'destructive' | 'sec
   APPROVED: 'outline',
 }
 
+function TxLink({ txHash, chain }: { txHash: string; chain?: string }) {
+  const isStacks = chain === 'STACKS'
+  const url = isStacks
+    ? stacksTxUrl(txHash)
+    : `https://alfajores.celoscan.io/tx/${txHash}`
+
+  return (
+    <a href={url} target="_blank" rel="noopener noreferrer"
+      className="hover:text-primary underline inline-flex items-center gap-1">
+      {txHash.slice(0, 8)}...
+      <ExternalLink className="w-3 h-3" />
+    </a>
+  )
+}
+
 export default function PayrollPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [statusFilter, setStatusFilter] = useState('')
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { activeChain } = useChainStore()
+  const isStacks = activeChain === 'STACKS'
 
   const { data: payrolls = [], isLoading } = useQuery<Payroll[]>({
     queryKey: ['payrolls', statusFilter],
@@ -83,7 +102,10 @@ export default function PayrollPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Payroll</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Payroll
+            {isStacks && <Layers className="w-5 h-5 text-orange-400" />}
+          </h1>
           <p className="text-muted-foreground">{pending} pending payments</p>
         </div>
         <div className="flex gap-2">
@@ -91,11 +113,15 @@ export default function PayrollPage() {
             variant="outline"
             onClick={() => bulkMutation.mutate()}
             disabled={bulkMutation.isPending || pending === 0}
+            className={isStacks ? 'border-orange-500/30 text-orange-400 hover:bg-orange-500/10' : ''}
           >
             <Zap className="w-4 h-4 mr-2" />
             {bulkMutation.isPending ? 'Running...' : 'Bulk Execute'}
           </Button>
-          <Button onClick={() => setShowCreate(true)}>
+          <Button
+            onClick={() => setShowCreate(true)}
+            className={isStacks ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}
+          >
             <Plus className="w-4 h-4 mr-2" /> New Payroll
           </Button>
         </div>
@@ -104,18 +130,14 @@ export default function PayrollPage() {
       {/* Status filters */}
       <div className="flex gap-2 flex-wrap">
         {['', 'PENDING', 'APPROVED', 'EXECUTED', 'FAILED'].map((s) => (
-          <Button
-            key={s}
-            variant={statusFilter === s ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setStatusFilter(s)}
-          >
+          <Button key={s} variant={statusFilter === s ? 'default' : 'outline'} size="sm"
+            onClick={() => setStatusFilter(s)}>
             {s || 'All'}
           </Button>
         ))}
       </div>
 
-      <Card>
+      <Card className={isStacks ? 'border-orange-500/20' : ''}>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
@@ -123,6 +145,7 @@ export default function PayrollPage() {
                 <TableHead>Employee</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Token</TableHead>
+                <TableHead>Chain</TableHead>
                 <TableHead>Payment Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Tx Hash</TableHead>
@@ -133,14 +156,14 @@ export default function PayrollPage() {
               {isLoading ? (
                 Array.from({ length: 4 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 7 }).map((_, j) => (
+                    {Array.from({ length: 8 }).map((_, j) => (
                       <TableCell key={j}><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : payrolls.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-12">
                     No payrolls found. Create your first payroll to get started.
                   </TableCell>
                 </TableRow>
@@ -155,53 +178,35 @@ export default function PayrollPage() {
                     </TableCell>
                     <TableCell className="font-medium">{formatCurrency(Number(p.amount), p.token)}</TableCell>
                     <TableCell>{p.token}</TableCell>
+                    <TableCell>
+                      <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+                        p.chain === 'STACKS' ? 'bg-orange-500/10 text-orange-400' : 'bg-green-500/10 text-green-400'
+                      }`}>
+                        {p.chain}
+                      </span>
+                    </TableCell>
                     <TableCell>{formatDate(p.paymentDate)}</TableCell>
                     <TableCell><Badge variant={statusVariant[p.status]}>{p.status}</Badge></TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">
-                      {p.txHash ? (
-                        <a
-                          href={`https://alfajores.celoscan.io/tx/${p.txHash}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:text-primary underline"
-                        >
-                          {p.txHash.slice(0, 8)}...
-                        </a>
-                      ) : '—'}
+                      {p.txHash ? <TxLink txHash={p.txHash} chain={p.chain} /> : '—'}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
                         {p.status === 'PENDING' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            title="Approve"
-                            onClick={() => approveMutation.mutate(p.id)}
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Approve"
+                            onClick={() => approveMutation.mutate(p.id)}>
                             <CheckCircle className="w-3.5 h-3.5 text-green-500" />
                           </Button>
                         )}
                         {p.status === 'APPROVED' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            title="Execute"
-                            onClick={() => executeMutation.mutate(p.id)}
-                            disabled={executeMutation.isPending}
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Execute"
+                            onClick={() => executeMutation.mutate(p.id)} disabled={executeMutation.isPending}>
                             <Play className="w-3.5 h-3.5 text-primary" />
                           </Button>
                         )}
                         {(p.status === 'PENDING' || p.status === 'APPROVED') && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7"
-                            title="Cancel"
-                            onClick={() => cancelMutation.mutate(p.id)}
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7" title="Cancel"
+                            onClick={() => cancelMutation.mutate(p.id)}>
                             <XCircle className="w-3.5 h-3.5 text-destructive" />
                           </Button>
                         )}
