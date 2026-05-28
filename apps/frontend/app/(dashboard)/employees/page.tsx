@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, Plus, UserCheck, UserX, Trash2, Pencil } from 'lucide-react'
+import { Search, Plus, UserCheck, UserX, Trash2, Pencil, Layers } from 'lucide-react'
 import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,15 +10,30 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { formatCurrency, shortenAddress } from '@/lib/utils'
+import { shortenStacksAddress } from '@/lib/stacks'
 import { useToast } from '@/hooks/use-toast'
+import { useChainStore } from '@/store/chain'
 import type { Employee } from '@/types'
 import { AddEmployeeDialog } from '@/components/employees/add-employee-dialog'
 import { EditEmployeeDialog } from '@/components/employees/edit-employee-dialog'
+import { StacksAddEmployeeDialog } from '@/components/employees/stacks-add-employee-dialog'
 
 const statusVariant: Record<string, 'success' | 'warning' | 'destructive'> = {
   ACTIVE: 'success',
   SUSPENDED: 'warning',
   TERMINATED: 'destructive',
+}
+
+function ChainBadge({ chain }: { chain?: string }) {
+  if (!chain) return null
+  const isStacks = chain === 'STACKS'
+  return (
+    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
+      isStacks ? 'bg-orange-500/10 text-orange-400' : 'bg-green-500/10 text-green-400'
+    }`}>
+      {isStacks ? 'STX' : 'CELO'}
+    </span>
+  )
 }
 
 export default function EmployeesPage() {
@@ -28,6 +43,8 @@ export default function EmployeesPage() {
   const [editEmployee, setEditEmployee] = useState<Employee | null>(null)
   const queryClient = useQueryClient()
   const toast = useToast()
+  const { activeChain } = useChainStore()
+  const isStacks = activeChain === 'STACKS'
 
   const { data: employees = [], isLoading } = useQuery<Employee[]>({
     queryKey: ['employees', search, statusFilter],
@@ -56,14 +73,25 @@ export default function EmployeesPage() {
     },
   })
 
+  const formatWallet = (addr: string) =>
+    addr?.startsWith('SP') || addr?.startsWith('ST') || addr?.startsWith('SN')
+      ? shortenStacksAddress(addr)
+      : shortenAddress(addr)
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Employees</h1>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            Employees
+            {isStacks && <Layers className="w-5 h-5 text-orange-400" />}
+          </h1>
           <p className="text-muted-foreground">{employees.length} total employees</p>
         </div>
-        <Button onClick={() => setShowAdd(true)}>
+        <Button
+          onClick={() => setShowAdd(true)}
+          className={isStacks ? 'bg-orange-500 hover:bg-orange-600 text-white' : ''}
+        >
           <Plus className="w-4 h-4 mr-2" /> Add Employee
         </Button>
       </div>
@@ -93,12 +121,13 @@ export default function EmployeesPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className={isStacks ? 'border-orange-500/20' : ''}>
         <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Employee</TableHead>
+                <TableHead>Chain</TableHead>
                 <TableHead>Wallet</TableHead>
                 <TableHead>Salary</TableHead>
                 <TableHead>Frequency</TableHead>
@@ -110,14 +139,14 @@ export default function EmployeesPage() {
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <TableRow key={i}>
-                    {Array.from({ length: 6 }).map((_, j) => (
+                    {Array.from({ length: 7 }).map((_, j) => (
                       <TableCell key={j}><div className="h-4 bg-muted rounded animate-pulse" /></TableCell>
                     ))}
                   </TableRow>
                 ))
               ) : employees.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-12">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
                     No employees found. Add your first employee to get started.
                   </TableCell>
                 </TableRow>
@@ -131,7 +160,10 @@ export default function EmployeesPage() {
                         {emp.title && <p className="text-xs text-muted-foreground">{emp.title}</p>}
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">{shortenAddress(emp.walletAddress)}</TableCell>
+                    <TableCell>
+                      <ChainBadge chain={(emp as any).chain} />
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{formatWallet(emp.walletAddress)}</TableCell>
                     <TableCell>{formatCurrency(emp.salary, emp.token)}</TableCell>
                     <TableCell className="capitalize">{emp.paymentFrequency.toLowerCase()}</TableCell>
                     <TableCell>
@@ -139,43 +171,22 @@ export default function EmployeesPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          title="Edit"
-                          onClick={() => setEditEmployee(emp)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8" title="Edit" onClick={() => setEditEmployee(emp)}>
                           <Pencil className="w-3.5 h-3.5" />
                         </Button>
                         {emp.status === 'ACTIVE' ? (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title="Suspend"
-                            onClick={() => statusMutation.mutate({ id: emp.id, status: 'SUSPENDED' })}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Suspend"
+                            onClick={() => statusMutation.mutate({ id: emp.id, status: 'SUSPENDED' })}>
                             <UserX className="w-3.5 h-3.5" />
                           </Button>
                         ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title="Resume"
-                            onClick={() => statusMutation.mutate({ id: emp.id, status: 'ACTIVE' })}
-                          >
+                          <Button variant="ghost" size="icon" className="h-8 w-8" title="Resume"
+                            onClick={() => statusMutation.mutate({ id: emp.id, status: 'ACTIVE' })}>
                             <UserCheck className="w-3.5 h-3.5" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive"
-                          title="Remove"
-                          onClick={() => deleteMutation.mutate(emp.id)}
-                        >
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" title="Remove"
+                          onClick={() => deleteMutation.mutate(emp.id)}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </Button>
                       </div>
@@ -188,7 +199,10 @@ export default function EmployeesPage() {
         </CardContent>
       </Card>
 
-      <AddEmployeeDialog open={showAdd} onClose={() => setShowAdd(false)} />
+      {isStacks
+        ? <StacksAddEmployeeDialog open={showAdd} onClose={() => setShowAdd(false)} />
+        : <AddEmployeeDialog open={showAdd} onClose={() => setShowAdd(false)} />
+      }
       <EditEmployeeDialog employee={editEmployee} onClose={() => setEditEmployee(null)} />
     </div>
   )

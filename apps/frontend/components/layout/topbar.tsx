@@ -4,6 +4,7 @@ import { Bell, Sun, Moon } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { WalletButton } from '@/components/wallet/wallet-button'
+import { ChainSwitcher } from '@/components/layout/chain-switcher'
 import { useAuthStore } from '@/store/auth'
 
 export function Topbar() {
@@ -17,7 +18,8 @@ export function Topbar() {
           {user?.company?.name ?? 'Your Company'}
         </p>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
+        <ChainSwitcher />
         <WalletButton />
         <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
           {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}

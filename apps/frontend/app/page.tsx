@@ -10,15 +10,16 @@ const features = [
 ]
 
 const chains = [
-  { name: 'Celo', status: 'Live', color: 'text-green-400' },
-  { name: 'Base', status: 'Coming Soon', color: 'text-gray-400' },
-  { name: 'Ethereum', status: 'Coming Soon', color: 'text-gray-400' },
+  { name: 'Celo', status: 'Live', color: 'text-green-400', dot: 'bg-green-400', border: 'border-green-500/30 bg-green-500/5' },
+  { name: 'Stacks', status: 'Live', color: 'text-orange-400', dot: 'bg-orange-400', border: 'border-orange-500/30 bg-orange-500/5' },
+  { name: 'Base', status: 'Coming Soon', color: 'text-gray-400', dot: 'bg-gray-500', border: 'border-gray-500/20' },
+  { name: 'Ethereum', status: 'Coming Soon', color: 'text-gray-400', dot: 'bg-gray-500', border: 'border-gray-500/20' },
 ]
 
 const testimonials = [
   { name: 'Sarah K.', role: 'CTO, RemoteFirst', text: 'AyaPay cut our payroll processing time from 3 days to 30 seconds.' },
   { name: 'David M.', role: 'Founder, DAO Labs', text: 'Finally a payroll tool built for Web3 teams. Our contributors love it.' },
-  { name: 'Amara O.', role: 'HR Lead, TechAfrica', text: 'No more currency conversion headaches. We pay in USDC on Celo and everyone is happy.' },
+  { name: 'Amara O.', role: 'HR Lead, TechAfrica', text: 'No more currency conversion headaches. We pay in USDC on Celo and STX on Stacks.' },
 ]
 
 export default function LandingPage() {
@@ -40,16 +41,24 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="max-w-4xl mx-auto px-6 py-24 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-sm text-muted-foreground mb-6">
-          <span className="w-2 h-2 rounded-full bg-green-400" />
-          Now live on Celo Alfajores Testnet
+        <div className="inline-flex items-center gap-3 px-3 py-1 rounded-full border text-sm text-muted-foreground mb-6 flex-wrap justify-center">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            Live on Celo
+          </span>
+          <span className="text-muted-foreground/40">·</span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+            Live on Stacks
+          </span>
         </div>
         <h1 className="text-5xl font-bold leading-tight mb-6">
           Crypto Payroll for<br />
           <span className="text-primary">Global Teams</span>
         </h1>
         <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-          Pay your remote team in USDC, USDT, CELO, or cUSD. Instant, borderless, and fully transparent on the Celo blockchain.
+          Pay your remote team in USDC, cUSD, CELO, or STX. Instant, borderless, and fully
+          transparent across Celo and Stacks blockchains.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link href="/register">
@@ -82,10 +91,11 @@ export default function LandingPage() {
       {/* Supported Chains */}
       <section className="max-w-6xl mx-auto px-6 py-16 text-center">
         <h2 className="text-3xl font-bold mb-4">Multi-Chain Support</h2>
-        <p className="text-muted-foreground mb-10">Built on Celo, expanding to more chains soon.</p>
-        <div className="flex items-center justify-center gap-6 flex-wrap">
-          {chains.map(({ name, status, color }) => (
-            <div key={name} className="flex items-center gap-2 px-4 py-2 rounded-full border">
+        <p className="text-muted-foreground mb-10">Live on Celo and Stacks. More chains coming soon.</p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          {chains.map(({ name, status, color, dot, border }) => (
+            <div key={name} className={`flex items-center gap-2 px-4 py-2 rounded-full border ${border}`}>
+              <span className={`w-2 h-2 rounded-full ${dot} ${status === 'Live' ? 'animate-pulse' : 'opacity-40'}`} />
               <span className={`font-semibold ${color}`}>{name}</span>
               <span className="text-xs text-muted-foreground">{status}</span>
             </div>
@@ -112,7 +122,7 @@ export default function LandingPage() {
       {/* CTA */}
       <section className="max-w-2xl mx-auto px-6 py-24 text-center">
         <h2 className="text-3xl font-bold mb-4">Ready to modernize payroll?</h2>
-        <p className="text-muted-foreground mb-8">Join hundreds of companies paying their teams in crypto on Celo.</p>
+        <p className="text-muted-foreground mb-8">Join hundreds of companies paying their teams in crypto on Celo and Stacks.</p>
         <Link href="/register">
           <Button size="lg" className="gap-2">
             Get started free <ChevronRight className="w-4 h-4" />
@@ -122,7 +132,7 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="border-t px-6 py-8 text-center text-sm text-muted-foreground">
-        <p>© 2026 AyaPay. Built on Celo. MIT License.</p>
+        <p>© 2026 AyaPay. Built on Celo &amp; Stacks. MIT License.</p>
       </footer>
     </div>
   )

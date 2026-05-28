@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Users, CreditCard, BarChart3, Settings, LogOut, Zap, Menu, X, UserCircle } from 'lucide-react'
+import { LayoutDashboard, Users, CreditCard, BarChart3, Settings, LogOut, Zap, Menu, X, UserCircle, Layers } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/store/auth'
+import { useChainStore } from '@/store/chain'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -15,6 +16,27 @@ const navItems = [
   { href: '/employee-portal', label: 'My Portal', icon: UserCircle },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]
+
+function ChainIndicator() {
+  const { activeChain } = useChainStore()
+  const isStacks = activeChain === 'STACKS'
+
+  return (
+    <div className={cn(
+      'mx-4 mb-2 px-3 py-2 rounded-md text-xs font-medium flex items-center gap-2 border transition-colors duration-200',
+      isStacks
+        ? 'bg-orange-500/10 border-orange-500/20 text-orange-400'
+        : 'bg-green-500/10 border-green-500/20 text-green-400'
+    )}>
+      <Layers className="w-3.5 h-3.5" />
+      <span>{isStacks ? 'Stacks Mainnet' : 'Celo Network'}</span>
+      <span className={cn(
+        'ml-auto w-2 h-2 rounded-full animate-pulse',
+        isStacks ? 'bg-orange-400' : 'bg-green-400'
+      )} />
+    </div>
+  )
+}
 
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
@@ -30,6 +52,11 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
           <span className="font-bold text-lg">AyaPay</span>
         </Link>
+      </div>
+
+      {/* Chain indicator */}
+      <div className="pt-3">
+        <ChainIndicator />
       </div>
 
       {/* Nav */}
