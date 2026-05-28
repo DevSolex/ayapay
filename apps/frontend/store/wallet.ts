@@ -2,12 +2,21 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 interface WalletState {
+  // Celo wallet
   address: string | null
   network: string | null
   chainId: number | null
   isConnecting: boolean
   connectWallet: () => Promise<void>
   disconnect: () => void
+
+  // Stacks wallet
+  stacksAddress: string | null
+  stacksNetwork: string | null
+  isConnectingStacks: boolean
+  connectStacksWallet: () => Promise<void>
+  disconnectStacks: () => void
+  setStacksAddress: (address: string | null) => void
 }
 
 // EIP-1193 provider (MetaMask, MiniPay, WalletConnect, etc.)
@@ -19,6 +28,12 @@ declare global {
       removeListener: (event: string, handler: (...args: unknown[]) => void) => void
       isMetaMask?: boolean
       isMiniPay?: boolean
+    }
+    StacksProvider?: {
+      request: (method: string, params?: unknown) => Promise<unknown>
+    }
+    LeatherProvider?: {
+      request: (method: string, params?: unknown) => Promise<unknown>
     }
   }
 }
@@ -57,10 +72,16 @@ async function addCeloNetwork(testnet = true) {
 export const useWalletStore = create<WalletState>()(
   persist(
     (set) => ({
+      // Celo state
       address: null,
       network: null,
       chainId: null,
       isConnecting: false,
+
+      // Stacks state
+      stacksAddress: null,
+      stacksNetwork: null,
+      isConnectingStacks: false,
 
       connectWallet: async () => {
         if (typeof window === 'undefined' || !window.ethereum) {
@@ -114,10 +135,51 @@ export const useWalletStore = create<WalletState>()(
       },
 
       disconnect: () => set({ address: null, network: null, chainId: null }),
+
+      connectStacksWallet: async () => {
+        set({ isConnectingStacks: true })
+        try {
+          // Try Leather/Hiro wallet
+          const provider = window.StacksProvider || window.LeatherProvider
+          if (provider) {
+            const response = await provider.request('getAddresses') as {
+              result: { addresses: Array<{ address: string; type: string }> }
+            }
+            const mainnetAddr = response.result.addresses.find(
+              (a: { type: string }) => a.type === 'stacks'
+            )
+            if (mainnetAddr) {
+              set({
+                stacksAddress: mainnetAddr.address,
+                stacksNetwork: 'Stacks Mainnet',
+              })
+              return
+            }
+          }
+          throw new Error(
+            'No Stacks wallet detected. Please install the Leather (Hiro) wallet extension.'
+          )
+        } finally {
+          set({ isConnectingStacks: false })
+        }
+      },
+
+      disconnectStacks: () => set({ stacksAddress: null, stacksNetwork: null }),
+
+      setStacksAddress: (address) => set({
+        stacksAddress: address,
+        stacksNetwork: address ? 'Stacks Mainnet' : null,
+      }),
     }),
     {
       name: 'ayapay-wallet',
-      partialize: (s) => ({ address: s.address, network: s.network, chainId: s.chainId }),
+      partialize: (s) => ({
+        address: s.address,
+        network: s.network,
+        chainId: s.chainId,
+        stacksAddress: s.stacksAddress,
+        stacksNetwork: s.stacksNetwork,
+      }),
     }
   )
 )
